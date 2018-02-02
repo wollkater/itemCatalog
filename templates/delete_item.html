@@ -1,0 +1,40 @@
+{% extends "main.html" %}
+{% block content %}
+    {% include "header.html" %}
+    <div class="container narrow">
+        <div class="columns is-centered">
+            <div class="column is-half">
+                <h1 class="title">Are you sure you want to delete {{ item.name }} ?</h1>
+                <form method="post" action="{{ url_for('cud_items') }}">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <div class="field">
+                        <input class="control" type="hidden" name="id" id="id" value="{{ item.id }}">
+                    </div>
+                    <div class="field">
+                        <label class="label" for="cat">Category</label>
+                        <select id="cat" class="control" name="cat_id" disabled>
+                            {% for category in categories %}
+                                {% if category.id == item.category_id %}
+                                    <option value="{{ category.id }}" selected>{{ category.name }}</option>
+                                {% endif %}
+                                {% if category.id != item.category_id %}
+                                    <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label class="label" for="name">Name</label>
+                        <input class="control" type="text" name="name" id="name" value="{{ item.name }}" disabled>
+                    </div>
+                    <div class="field">
+                        <label class="label" for="description">Description</label>
+                        <textarea class="control" name="description" id="description" disabled>{{ item.description }}</textarea>
+                    </div>
+                    <button class="button is-danger" type="submit">Delete item</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% include "footer.html" %}
+{% endblock %}

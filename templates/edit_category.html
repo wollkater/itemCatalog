@@ -1,0 +1,16 @@
+{% extends "main.html" %}
+{% block content %}
+    {% include "header.html" %}
+    <div class="container narrow">
+        <form method="post" action="{{ url_for('cud_categories') }}">
+            <input type="hidden" name="_method" value="PUT">
+            <label for="id">Category Id</label>
+            <input type="text" name="id" id="id" readonly value="{{ category.id }}">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name">
+            <button class="button is-primary" type="submit">Edit category</button>
+        </form>
+
+    </div>
+    {% include "footer.html" %}
+{% endblock %}

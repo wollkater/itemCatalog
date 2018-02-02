@@ -1,0 +1,40 @@
+{% extends "main.html" %}
+{% block content %}
+    {% include "header.html" %}
+    <div class="container narrow">
+        <div class="columns is-centered">
+            <div class="column is-half">
+                <form method="post" action="{{ url_for('cud_items') }}">
+                    <input type="hidden" name="_method" value="PUT">
+                    <div class="field">
+                        <label class="label" for="id">Id</label>
+                        <input class="control" type="text" name="id" id="id" value="{{ item.id }}" readonly>
+                    </div>
+                    <div class="field">
+                        <label class="label" for="cat">Category</label>
+                        <select id="cat" class="control" name="cat_id">
+                            {% for category in categories %}
+                                {% if category.id == item.category_id %}
+                                    <option value="{{ category.id }}" selected>{{ category.name }}</option>
+                                {% endif %}
+                                {% if category.id != item.category_id %}
+                                    <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label class="label" for="name">Name</label>
+                        <input class="control" type="text" name="name" id="name" value="{{ item.name }}">
+                    </div>
+                    <div class="field">
+                        <label class="label" for="description">Description</label>
+                        <textarea class="control" name="description" id="description">{{ item.description }}</textarea>
+                    </div>
+                    <button class="button is-primary" type="submit">Update item</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% include "footer.html" %}
+{% endblock %}

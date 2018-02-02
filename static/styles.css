@@ -1,0 +1,12 @@
+.container.narrow {
+    max-width: 500px;
+}
+
+h1 {
+    font-size: 1.5rem;
+}
+
+.flex-v-center {
+    display:flex!important;
+    align-items: center!important;
+}

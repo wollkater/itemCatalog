@@ -1,0 +1,17 @@
+{% extends "main.html" %}
+{% block content %}
+    {% include "header.html" %}
+    <div class="container narrow">
+        <h1 class="title">Are you sure you want to delete {{ category.name }} ?</h1>
+        <form method="post" action="{{ url_for('cud_categories') }}">
+            <input type="hidden" name="_method" value="DELETE">
+            <input class="control" type="text" name="id" id="id" hidden value="{{ category.id }}">
+            <div class="field">
+                <label for="name">Name</label>
+                <input class="control" type="text" id="name" name="name" value="{{ category.name }}" readonly>
+            </div>
+            <button class="button is-danger" type="submit">Delete category</button>
+        </form>
+    </div>
+    {% include "footer.html" %}
+{% endblock %}

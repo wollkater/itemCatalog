@@ -1,0 +1,51 @@
+{% extends "main.html" %}
+{% block content %}
+    {% include "header.html" %}
+    <div style="display: flex; justify-content: space-around ">
+    <div class="container narrow">
+        {% for category in categories %}
+            <section class="section">
+                <div class="columns">
+                    <div class="column">
+                        <h1 class="is-size-4">{{ category.name }}</h1>
+                        {% if session['username'] %}
+                            <a href="{{ url_for('delete_category', id=category.id) }}">Delete</a>
+                        {% endif %}
+                    </div>
+                    {% if session['username'] %}
+                        <div class="column">
+                            <a class="button is-primary" href="{{ url_for('create_item', cat_id=category.id) }}">Add
+                                Item</a>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="columns">
+                    <div class="column is-11">
+                        <ul>
+                            {% for item in category.items %}
+                                <li>
+                                    <h2 class="is-size-5">{{ item.name }}
+                                        {% if session['username'] %}
+                                            <a
+                                               href="{{ url_for('edit_item', id=item.id) }}">Edit
+                                            </a>
+                                             <a
+                                               href="{{ url_for('delete_item', id=item.id) }}">Delete
+                                            </a>
+                                        {% endif %}</h2>
+                                    <div style="padding:0 0 0 20px">
+                                        <p>{{ item.description }}</p>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                </div>
+            </section>
+        {% endfor %}
+
+    </div>
+    </div>
+    {% include "footer.html" %}
+{% endblock %}

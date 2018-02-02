@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!--LOAD PRE-REQUISITES FOR GOOGLE SIGN IN -->
+    <script
+            src="https://code.jquery.com/jquery-3.2.1.min.js"
+            integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+            crossorigin="anonymous"></script>
+
+
+    <script src="//apis.google.com/js/platform.js?onload=start"></script>
+    		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.1/css/bulma.min.css" type="text/css">
+    <!-- END PRE-REQUISITES FOR GOOGLE SIGN IN -->
+    <title>Login</title>
+</head>
+<body>
+<!-- GOOGLE PLUS SIGN IN BUTTON-->
+<div class="container narrow">
+    <div class="columns is-centered">
+        <div class="column is-half">
+          <span class="g-signin"
+                data-scope="openid email"
+                data-clientid="546380434445-f9mpofpv34u0tj6vo2gmcvl27f7jlvrq.apps.googleusercontent.com"
+                data-redirecturi="postmessage"
+                data-accesstype="offline"
+                data-cookiepolicy="single_host_origin"
+                data-callback="signInCallback"
+                data-approvalprompt="force">
+          </span>
+        </div>
+    </div>
+</div>
+<!--END GOOGLE PLUS SIGN IN BUTTON -->
+</body>
+<script>
+    function signInCallback(authResult) {
+        if (authResult['code']) {
+            $.ajax({
+                type: 'POST',
+                url: '/gconnect?state={{STATE}}',
+                contentType: 'application/octet-stream; charset=utf-8',
+                data: authResult['code'],
+                success: function (result) {
+                    if (result) {
+                        $('#result').html('Login Successful! </br> Redirecting...')
+                        setTimeout(function () {
+                            window.location.href = '/'
+                        })
+                    }
+                }
+            })
+        }
+    }
+</script>
+</html>

@@ -1,0 +1,38 @@
+<nav class="navbar is-dark is-active" style="padding:10px;" role="navigation">
+    <h1 class="navbar-brand flex-v-center">
+        Crusty Crab
+    </h1>
+    <div class="flex-v-center" style="width:100%;">
+        <div class="navbar-end">
+            {% if session['username'] %}
+
+                <div class="columns">
+                <div class="column">
+                    <a class="button is-primary is-outlined" href="{{ url_for('create_category') }}">Add Category</a>
+                </div>
+                <div class="column">
+                    <button class="button" onclick="logout()">Logout</button>
+                </div>
+            {% endif %}
+
+            </div>
+            {% if not session['username'] %}
+                <a class="button is-primary" href="{{ url_for('login') }}">Login</a>
+            {% endif %}
+        </div>
+
+
+    </div>
+</nav>
+<script>
+    function logout() {
+        var http = new XMLHttpRequest();
+        var url = "{{ url_for('logout') }}";
+        http.open("POST", url, true);
+        http.send();
+        location.reload()
+    }
+</script>
+<template>
+
+</template>
