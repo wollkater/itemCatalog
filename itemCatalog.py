@@ -4,7 +4,8 @@ import string
 import httplib2
 import os
 import requests
-from flask import Flask, request, jsonify, render_template, json, make_response, flash, redirect
+from flask import Flask, request, jsonify, render_template, json, \
+    make_response, flash, redirect
 from oauth2client.client import flow_from_clientsecrets, FlowExchangeError
 from sqlalchemy.orm import sessionmaker
 from flask import session as login_session
@@ -22,15 +23,14 @@ data = json.load(open(json_url))
 CLIENT_ID = data['web']['client_id']
 
 
-def request_wants_json():
-    best = request.accept_mimetypes \
-        .best_match(['application/json', 'text/html'])
-    return best == 'application/json' and \
-           request.accept_mimetypes[best] > \
-           request.accept_mimetypes['text/html']
-
 def no_authentication():
     return make_response(json.dumps("You're not logged in"), 401)
+
+
+def not_authorized():
+    return make_response(
+        json.dumps("You're not allowed to do this action"), 403
+    )
 
 
 @app.route('/', methods=['GET'])
@@ -38,30 +38,51 @@ def no_authentication():
 def read_categories():
     categories = session.query(Category).all()
 
-    if request_wants_json():
-        return jsonify(categories=[c.serialize for c in categories])
+    return render_template('categories.html', categories=categories,
+                           session=login_session)
 
-    return render_template('categories.html', categories=categories, session=login_session)
+
+@app.route('/categories/json', methods=['GET'])
+def read_categories_json():
+    categories = session.query(Category).all()
+    return jsonify(categories=[c.serialize for c in categories])
+
+@app.route('/categories/<int:cat_id>/json', methods=['GET'])
+def read_items_json(cat_id):
+    category = session.query(Category).filter_by(id=cat_id).one()
+    return jsonify(items=[i.serialize for i in category.items])
+
 
 
 @app.route('/categories', methods=['POST'])
 def cud_categories():
+    """
+    CRUD endpoint for categories. Since HTML forms
+    can only make post and get requests
+    we need to send the method within the body
+    redirects after successful action
+    """
     data = request.form
     method = data['_method']
     if 'username' not in login_session:
-        no_authentication()
+        return no_authentication()
 
     if method == 'POST':
-        category = Category(name=data['name'],created_by=login_session['gplus_id'])
+        category = Category(name=data['name'],
+                            created_by=login_session['gplus_id'])
         session.add(category)
         session.commit()
     if method == 'PUT':
         category = session.query(Category).filter_by(id=data['id']).one()
+        if category.created_by != login_session['gplus_id']:
+            return not_authorized()
         category.name = data['name']
         session.add(category)
         session.commit()
     if method == 'DELETE':
         category = session.query(Category).filter_by(id=data['id']).one()
+        if category.created_by != login_session['gplus_id']:
+            return not_authorized()
         # first delete all items in that category
         for item in category.items:
             session.delete(item)
@@ -69,43 +90,18 @@ def cud_categories():
         session.commit()
     return redirect('/')
 
-
-@app.route('/categories/<int:cat_id>/items/create', methods=['GET'])
-def create_item(cat_id):
-    category = session.query(Category).filter_by(id=cat_id).one()
-
-    return render_template('create_item.html', category=category, session=login_session)
-
-@app.route('/categories/<int:id>/delete', methods=['GET'])
-def delete_category(id):
-    category = session.query(Category).filter_by(id=id).one()
-
-    return render_template('delete_category.html', category=category, session=login_session)
-
-@app.route('/categories/create', methods=['GET'])
-def create_category():
-    return render_template('create_category.html', session=login_session)
-
-@app.route('/items/<int:id>', methods=['GET'])
-def edit_item(id):
-    item = session.query(Item).filter_by(id=id).one()
-    categories = session.query(Category).all()
-
-    return render_template('edit_Item.html', item=item, session=login_session, categories=categories)
-
-@app.route('/items/<int:id>/delete', methods=['GET'])
-def delete_item(id):
-    item = session.query(Item).filter_by(id=id).one()
-    categories = session.query(Category).all()
-
-    return render_template('delete_item.html', item=item, session=login_session, categories=categories)
-
 @app.route('/items', methods=['POST'])
 def cud_items():
+    """
+    CRUD endpoint for items. Since HTML forms
+    can only make post and get requests
+    we need to send the method within the body
+    redirects after successful action
+    """
     data = request.form
     method = data['_method']
     if 'username' not in login_session:
-        no_authentication()
+        return no_authentication()
 
     if method == 'POST':
         item = Item(name=data['name'],
@@ -118,6 +114,8 @@ def cud_items():
 
     if method == 'PUT':
         item = session.query(Item).filter_by(id=data['id']).one()
+        if item.created_by != login_session['gplus_id']:
+            return not_authorized()
         item.name = data['name']
         item.description = data['description']
         item.category_id = data['cat_id']
@@ -127,18 +125,61 @@ def cud_items():
         return redirect('/')
     if method == 'DELETE':
         item = session.query(Item).filter_by(id=data['id']).one()
+        if item.created_by != login_session['gplus_id']:
+            return not_authorized()
         session.delete(item)
         session.commit()
         return redirect('/')
 
+# Template routes
+@app.route('/categories/<int:cat_id>/items/create', methods=['GET'])
+def create_item(cat_id):
+    category = session.query(Category).filter_by(id=cat_id).one()
+
+    return render_template('create_item.html', category=category,
+                           session=login_session)
+
+
+@app.route('/categories/<int:id>/delete', methods=['GET'])
+def delete_category(id):
+    category = session.query(Category).filter_by(id=id).one()
+
+    return render_template('delete_category.html', category=category,
+                           session=login_session)
+
+
+@app.route('/categories/create', methods=['GET'])
+def create_category():
+    return render_template('create_category.html', session=login_session)
+
+
+@app.route('/items/<int:id>', methods=['GET'])
+def edit_item(id):
+    item = session.query(Item).filter_by(id=id).one()
+    categories = session.query(Category).all()
+
+    return render_template('edit_Item.html', item=item, session=login_session,
+                           categories=categories)
+
+
+@app.route('/items/<int:id>/delete', methods=['GET'])
+def delete_item(id):
+    item = session.query(Item).filter_by(id=id).one()
+    categories = session.query(Category).all()
+
+    return render_template('delete_item.html', item=item,
+                           session=login_session, categories=categories)
+
 
 @app.route('/login', methods=['GET'])
 def login():
-    state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(32))
+    state = ''.join(
+        random.choice(string.ascii_uppercase + string.digits) for x in
+        range(32))
     login_session['state'] = state
     return render_template('login.html', STATE=state)
 
-
+# Google OAuth endpoint
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
     if request.args.get('state') != login_session['state']:
@@ -147,7 +188,8 @@ def gconnect():
         return response
     code = request.data
     try:
-        oauth_flow = flow_from_clientsecrets(os.path.join(SITE_ROOT, "client_secret.json"), scope='')
+        oauth_flow = flow_from_clientsecrets(
+            os.path.join(SITE_ROOT, "client_secret.json"), scope='')
         oauth_flow.redirect_uri = 'postmessage'
         credentials = oauth_flow.step2_exchange(code)
     except FlowExchangeError:
@@ -155,7 +197,8 @@ def gconnect():
         response.headers['Content-Type'] = 'application/json'
         return response
     access_token = credentials.access_token
-    url = 'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={}'.format(access_token)
+    url = 'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={}'\
+        .format(access_token)
     h = httplib2.Http()
     result = json.loads(h.request(url, 'GET')[1])
     # Handle errors
@@ -165,11 +208,13 @@ def gconnect():
         return response
     gplus_id = credentials.id_token['sub']
     if result['user_id'] != gplus_id:
-        response = make_response(json.dumps('Token\'s user ID doesn\'t match given user Id'), 401)
+        response = make_response(
+            json.dumps('Token\'s user ID doesn\'t match given user Id'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
     if result['issued_to'] != CLIENT_ID:
-        response = make_response(json.dumps('Token\'s client ID doesn\'t match app\'s'), 401)
+        response = make_response(
+            json.dumps('Token\'s client ID doesn\'t match app\'s'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
     stored_credentials = login_session.get('credentials')
@@ -184,7 +229,8 @@ def gconnect():
     user_info_url = 'https://www.googleapis.com/oauth2/v1/userinfo'
     params = {'access_token': credentials.access_token, 'alt': 'json'}
     data = requests.get(user_info_url, params=params).json()
-    # save data to session
+    # save data to session. Extra table for user is not needed, since
+    # we save the gplus_id on the categories and items
     login_session['username'] = data['name']
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
