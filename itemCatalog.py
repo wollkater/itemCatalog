@@ -16,6 +16,7 @@ Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 app = Flask(__name__)
+app.secret_key = os.urandom(24)
 
 SITE_ROOT = os.path.realpath(os.path.dirname(__file__))
 json_url = os.path.join(SITE_ROOT, "client_secret.json")
@@ -247,5 +248,4 @@ def logout():
 
 
 if __name__ == '__main__':
-    app.secret_key = 'somethingUltraSecret'
     app.run()
